@@ -1,0 +1,107 @@
+### 第一部分：视觉风格种子（style_seeds）
+
+```json
+{
+  "color_palette": {
+    "primary": "#0078D7",
+    "secondary": "#D9E3F8",
+    "accent": "#FFB900",
+    "background": "#FFFFFF",
+    "text": "#333333"
+  },
+  "font_style": "现代科技感",
+  "visual_mood": "专业冷静",
+  "ai_image_style_keywords": "technological, futuristic, data-driven"
+}
+```
+
+### 第二部分：分镜表（storyboard）
+
+```json
+[
+  {
+    "segment_id": 1,
+    "segment_title": "春节出行报告数据震撼开场",
+    "script_text": "华为春节出行报告数据大屏动画，3.73亿公里数字动态放大",
+    "estimated_duration_sec": 20,
+    "visual_type": "data_chart",
+    "visual_description": "数据图表展示3.73亿公里的数字，动态放大效果，背景为地球和月球的图像，显示往返次数",
+    "key_elements": ["3.73亿公里数字", "地球和月球图像", "往返次数"],
+    "text_overlay": "3.73亿公里 = 绕地球9300圈 = 往返月球500趟",
+    "transition": "cut",
+    "notes": "数据需要核实，确保准确性"
+  },
+  {
+    "segment_id": 2,
+    "segment_title": "街头采访与网络评论",
+    "script_text": "穿插街头采访或网络评论截图，显示人们争论激光雷达、芯片的画面",
+    "estimated_duration_sec": 25,
+    "visual_type": "mixed",
+    "visual_description": "街头采访视频片段和网络评论截图的混合展示，配合文字动画强调争论焦点",
+    "key_elements": ["街头采访", "网络评论截图", "激光雷达", "芯片"],
+    "text_overlay": "激光雷达 vs 纯视觉方案",
+    "transition": "fade",
+    "notes": "确保画面和文字信息的同步"
+  },
+  {
+    "segment_id": 3,
+    "segment_title": "揭秘数据飞轮",
+    "script_text": "动态循环图展示数据飞轮过程，动画展示各种Corner Case",
+    "estimated_duration_sec": 45,
+    "visual_type": "flow_diagram",
+    "visual_description": "流程图展示数据采集、上传、AI训练、OTA升级的循环过程，配合Corner Case动画",
+    "key_elements": ["数据飞轮流程图", "Corner Case动画"],
+    "text_overlay": "车采集数据→上传云端→AI训练→OTA升级→车体验提升",
+    "transition": "slide",
+    "notes": "动画需要生动展示Corner Case，增强观众理解"
+  },
+  {
+    "segment_id": 4,
+    "segment_title": "军备竞赛升级",
+    "script_text": "各大公司智算中心Logo与算力数据对比图，AI训练耗电量增长曲线图",
+    "estimated_duration_sec": 30,
+    "visual_type": "data_chart",
+    "visual_description": "数据图表展示各公司智算中心的Logo和算力数据，耗电量增长曲线图",
+    "key_elements": ["智算中心Logo", "算力数据", "耗电量增长曲线"],
+    "text_overlay": "特斯拉Dojo，华为盘古，小鹏，蔚来，毫末",
+    "transition": "cut",
+    "notes": "数据需要核实，确保准确性"
+  },
+  {
+    "segment_id": 5,
+    "segment_title": "中美路径分野",
+    "script_text": "展示特斯拉FSD演示、英伟达芯片，对比中国车流、5G基站、政策文件",
+    "estimated_duration_sec": 35,
+    "visual_type": "comparison",
+    "visual_description": "左右对比图，左侧为特斯拉FSD和英伟达芯片，右侧为中国车流、5G基站和政策文件",
+    "key_elements": ["特斯拉FSD", "英伟达芯片", "中国车流", "5G基站", "政策文件"],
+    "text_overlay": "技术-算法密集型路径 vs 数据-基建密集型路径",
+    "transition": "fade",
+    "notes": "对比图需要清晰展示中美的不同路径"
+  },
+  {
+    "segment_id": 6,
+    "segment_title": "暗流与变数",
+    "script_text": "Anthropic新闻截图，欧盟GDPR法规图标，中国车企在欧洲街头测试的图片",
+    "estimated_duration_sec": 25,
+    "visual_type": "mixed",
+    "visual_description": "新闻截图和法规图标展示，中国车企在欧洲街头测试的图片配以疑问和锁的图标",
+    "key_elements": ["Anthropic新闻截图", "GDPR法规图标", "中国车企在欧洲街头测试的图片"],
+    "text_overlay": "AI技术不再是技术中立，数据保护法案",
+    "transition": "slide",
+    "notes": "图标和图片需要清晰，易于理解"
+  },
+  {
+    "segment_id": 7,
+    "segment_title": "尾声：我们正驶向何处",
+    "script_text": "中美路径对比总结画面，智慧城市中自动驾驶网络流畅运行的愿景动画",
+    "estimated_duration_sec": 30,
+    "visual_type": "ai_image",
+    "visual_description": "总结中美路径的画面，未来智慧城市中自动驾驶网络流畅运行的愿景动画",
+    "key_elements": ["中美路径对比", "智慧城市", "自动驾驶网络"],
+    "text_overlay": "我们正驶向何处？",
+    "transition": "fade",
+    "notes": "愿景动画需要展示未来自动驾驶的美好前景"
+  }
+]
+```

@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+
+# 环境变量
+.env
+*.env
+
+# Node.js
+node_modules/
+
+# 生成的媒体文件
+*.mp4
+*.mp3
+*.wav
+*.aac
+
+# 生成的图片（渲染输出）
+remotion/output/
+remotion-video/out/
+remotion/public/assets/tts_output.mp3
+
+# 项目生成数据（含音视频、AI图）
+pipeline/projects/*/05_audio/
+pipeline/projects/*/06_visual/
+pipeline/projects/*/07_output/
+
+# AI 生成的图片（visuals）
+pipeline/projects/*/visuals/
+
+# 旧版 remotion（独立 git 仓库，已被 remotion-video 替代）
+remotion/
+
+# Claude Code 本地配置
+.claude/
+
+# 临时文件
+*.log
+.DS_Store
+Thumbs.db

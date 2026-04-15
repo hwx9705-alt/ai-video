@@ -1,0 +1,24 @@
+# AI 科普视频自动化生产系统 - 依赖
+
+# ---- 核心框架 ----
+langgraph>=0.2.0
+langchain-core>=0.3.0
+
+# ---- LLM API 客户端 ----
+# DeepSeek 和 Kimi 都兼容 OpenAI API
+openai>=1.30.0
+
+# ---- 音频处理（后续集成） ----
+# openai-whisper>=20231117    # Whisper 语音识别
+# pydub>=0.25.1               # 音频处理
+
+# ---- 图表生成（后续集成） ----
+# plotly>=5.18.0              # 交互式图表
+# matplotlib>=3.8.0           # 静态图表
+# kaleido>=0.2.1              # Plotly 图片导出
+
+# ---- 视频合成（后续集成，需要 Node.js 环境） ----
+# remotion 通过 npm 安装，不在 pip 依赖中
+
+# ---- 工具 ----
+# ffmpeg-python>=0.2.0        # ffmpeg Python 封装
