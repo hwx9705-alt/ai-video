@@ -50,7 +50,7 @@ SYSTEM_PROMPT = """\
 
 ## 可用组件列表
 
-每个分镜段（segment）必须选择以下 9 个组件之一：
+每个分镜段（segment）必须选择以下 11 个组件之一：
 
 ### 1. DataReveal — 大数字冲击展示
 ```
@@ -84,7 +84,18 @@ props: {
 }
 ```
 
-### 4. CompareTwo — 左右对比
+### 4. PieChartAnimated — 环形图（占比/份额）
+```
+props: {
+  title: string,
+  data: Array<{ label: string, value: number, color?: string }>,  // 2~5 项
+  centerLabel?: string,    // 中央文字，如 "总计"
+  unit?: string             // 默认 "%"
+}
+```
+**仅当数据为占比/份额（总和约为 100% 或视为整体切分）时使用，项目数 ≤5。否则用 BarChart。**
+
+### 5. CompareTwo — 左右对比
 ```
 props: {
   title: string,
@@ -94,25 +105,32 @@ props: {
 }
 ```
 
-### 5. FlowSteps — 流程/步骤图
+### 6. FlowSteps — 流程/步骤图
 ```
 props: {
   title: string,
   steps: Array<{ label: string, description?: string }>,
-  direction?: "horizontal" | "vertical"  // 默认 horizontal（≤4步）
+  direction?: "horizontal" | "vertical" | "circular",
+  centerIcon?: string   // direction=circular 时中央装饰字符（如 "↻" "★"，不要用 emoji）
 }
 ```
+**步骤 ≥ 5 且有因果循环/飞轮性质时使用 `direction: "circular"` + `centerIcon`；纯线性流程用 horizontal。**
 
-### 6. KeyPoint — 金句/核心观点全屏强调
+### 7. KeyPoint — 金句/核心观点全屏强调
 ```
 props: {
   text: string,           // 一句话，不超过50字
-  emphasis?: string[],    // 要高亮的关键词
-  style?: "quote" | "statement" | "question"
+  emphasis?: string[],    // 要高亮的关键词（建议 1~3 个）
+  style?: "quote" | "statement" | "question" | "highlight"
 }
 ```
+**style 选择：**
+- `quote` — 引用/他人观点（大引号装饰）
+- `statement` — 作者总结陈述（底部装饰线）
+- `question` — 引发思考的反问（问号装饰）
+- `highlight` — 关键词擦除式扫光强调（emphasis 词最强视觉突出，用于最重要的一击金句）
 
-### 7. TitleCard — 段落标题/章节转场
+### 8. TitleCard — 段落标题/章节转场
 ```
 props: {
   title: string,
@@ -121,7 +139,7 @@ props: {
 }
 ```
 
-### 8. BulletList — 要点列表（3~5条）
+### 9. BulletList — 要点列表（3~5条最佳，最多 6 条）
 ```
 props: {
   title: string,
@@ -129,7 +147,7 @@ props: {
 }
 ```
 
-### 9. ImageWithOverlay — 图片+文字叠层（氛围/场景）
+### 10. ImageWithOverlay — 图片+文字叠层（氛围/场景）
 ```
 props: {
   imageSrc: string,       // 填 "assets/placeholder.jpg"（后续人工替换）
@@ -139,24 +157,39 @@ props: {
 }
 ```
 
+### 11. TypewriterText — 打字机逐字效果
+```
+props: {
+  text: string,                 // 要打出的文字（不超过30字）
+  title?: string,               // 上方可选小标题
+  charsPerSecond?: number,      // 打字速度，默认 8
+  highlight?: string,           // 文字中的某个子串，打到时变色
+  showCursor?: boolean          // 默认 true
+}
+```
+**适合：引文/代码/口号的逐字揭示，强调"过程感"。整段视频最多用 1-2 次，不要频繁使用。**
+
 ## 组件选择规则
 
 1. 脚本出现**核心数字**（单个重要数字）→ DataReveal
-2. 脚本出现**多个数字对比**（同类指标横向比较）→ BarChartAnimated
-3. 脚本出现**趋势/时间变化**（随时间的数字序列）→ LineChartAnimated
-4. 脚本做**两者对比**（A vs B，两种方案/两个阵营）→ CompareTwo
-5. 脚本讲**流程/步骤/因果链**（有先后顺序）→ FlowSteps
-6. 脚本有**一句话总结/金句**（观点最凝练的表达）→ KeyPoint
-7. 新话题/段落**开场标题**、视频结尾 → TitleCard
-8. 脚本列举**3~5条并列要点**（无明确顺序）→ BulletList
-9. 需要**氛围背景**（宏观叙述/历史背景/情感渲染）→ ImageWithOverlay（不超过总段落20%）
+2. 脚本出现**多个同类指标对比**（柱状数据）→ BarChartAnimated
+3. 脚本出现**随时间变化的数据**（趋势/时间序列）→ LineChartAnimated
+4. 脚本出现**占比/份额**（总和≈100%，市场份额/组成比例）→ PieChartAnimated
+5. 脚本做**两者对比**（A vs B，两种方案/两个阵营）→ CompareTwo
+6. 脚本讲**流程/步骤/因果链**（有先后顺序）→ FlowSteps（线性用 horizontal；循环/飞轮用 circular）
+7. 脚本有**一句话总结/金句** → KeyPoint（最重一击用 `style:"highlight"`）
+8. 新话题/段落**开场标题**、视频结尾 → TitleCard
+9. 脚本列举**3~6条并列要点**（无明确顺序）→ BulletList
+10. 需要**氛围背景**（宏观叙述/历史背景/情感渲染）→ ImageWithOverlay（不超过总段落20%）
+11. 脚本有**引文/代码/口号**需要"过程感"强调 → TypewriterText（整段视频 1-2 次即可）
 
 **额外要求：**
 - 开头第一段必须是 TitleCard（视频标题）
-- 开头第二段必须是 DataReveal 或 KeyPoint（制造冲击感）
+- 开头第二段必须是 DataReveal、KeyPoint 或 TypewriterText（制造冲击感）
 - 脚本里的数据必须准确搬到 props，不要编造数据
 - 每段时长 8~35 秒，有节奏变化（不要每段都一样长）
 - 总段落数 10~18 个（不要太碎也不要太少）
+- `transition` 通常填 `"fade"`；若两段语义紧密相连想无缝切换，可填 `"cut"`；想左右滑入切换可填 `"slide"`
 
 ## 输出格式
 
@@ -229,9 +262,9 @@ def call_deepseek(api_key: str, script_text: str) -> str:
 # ============================================================
 
 ALLOWED_COMPONENTS = {
-    "DataReveal", "BarChartAnimated", "LineChartAnimated",
+    "DataReveal", "BarChartAnimated", "LineChartAnimated", "PieChartAnimated",
     "CompareTwo", "FlowSteps", "KeyPoint", "TitleCard",
-    "BulletList", "ImageWithOverlay",
+    "BulletList", "ImageWithOverlay", "TypewriterText",
 }
 
 def extract_json(text: str) -> dict:
