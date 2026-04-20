@@ -91,9 +91,22 @@ git push origin main
 
 ### 可回撤的改造锚点
 - **Remotion 组件库改造** — merge commit `8a4cbf7`（11 commits 合并入 main）
-- **Script Agent 小 Lin 风格深化** — merge commit `(script-prompt-v2 合并后记录)`
+- **Script Agent 小 Lin 风格深化** — merge commit `2e31654`（4 commits 合并入 main）
 
 分支本身也保留（`remotion-change`、`script-prompt-v2`），可作 checkout 参照。
+
+### 回撤示例
+```bash
+# 不满意 Script Agent 改造，回撤它
+git revert -m 1 2e31654
+git push origin main
+
+# 不满意 Remotion 改造，回撤它
+git revert -m 1 8a4cbf7
+git push origin main
+
+# 回撤后还想恢复，再 revert 一次那个 revert commit 就行
+```
 
 ---
 
