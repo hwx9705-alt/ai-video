@@ -9,8 +9,7 @@
 ```
 /home/ubuntu/video-ai/
 ├── pipeline/          # Python 流水线（Streamlit UI + Multi-Agent）
-├── remotion-video/    # ⭐ 主渲染器（React + TypeScript，Phase 2 已 pipeline 集成）
-└── remotion/          # 旧渲染器（initial commit 后未更新，计划在 remotion-change 分支删除）
+└── remotion-video/    # 主渲染器（React + TypeScript，pipeline 集成）
 ```
 
 ---
@@ -34,45 +33,46 @@ pipeline/agents/
                                                                ↓
                               [gate_3 审核] → visual.py（图表+AI生图）
                                                                ↓
-remotion/render.py  →  npx remotion render  →  MP4
+remotion-video/render.py  →  npx remotion render  →  MP4
 ```
 
-**渲染器**：Remotion（React/Chromium），ffmpeg compose 方案待替换。
+**渲染器**：Remotion（React/Chromium），11 个动画组件 + fitText/measureText 自适应布局。
 
 ---
 
 ## 子项目说明
 
 - `pipeline/CLAUDE.md`：Python 流水线详情（Agents、审核门、环境变量）
-- `remotion/CLAUDE.md`：Remotion 组件详情（数据格式、渲染命令）
+- `remotion-video/CLAUDE.md`：Remotion 组件详情（数据格式、11 个组件、渲染命令）
 
 ---
 
-## 当前进度（2026-04-08）
+## 当前进度（2026-04-20）
 
-### 已完成
-- 全流水线可跑通（research → storyboard → Remotion render）
-- 7 个 Remotion 组件：TitleCard、TextCard、BarChart、LineChart、ComparisonCard、AIImageCard、Transition
+### Remotion 组件库改造（remotion-change 分支）
+- 引入 `@remotion/layout-utils` 的 fitText/measureText 做精确自适应布局
+- 切换到 `@remotion/google-fonts/NotoSansSC`（latin 子集 + 系统 CJK fallback）
+- design-system 扩展：springs / easings / shadows / gradients 预设
+- 9 个原组件全部重写（去 flex:1 拉伸、去硬编码字号、加渐变发光等视觉升级）
+- 新增 2 组件：PieChartAnimated（环形图）、TypewriterText（打字机）
+- 新增 KeyPoint `style:"highlight"` 模式（词级擦除扫光）
+- 新增 FlowSteps `direction:"circular"` 模式（圆周飞轮排列）
+- Transition 升级支持 fade / slide / cut 三种模式
+- generate_storyboard.py LLM prompt 同步更新教会 pipeline 选择新组件
+
+### 原有里程碑
+- 全流水线跑通（research → storyboard → Remotion render）
 - gate_3 TTS 语音合成（SiliconFlow CosyVoice2-0.5B，8 种音色）
 - gate_3 触发 Remotion 渲染（后台线程，轮询状态，视频预览）
-- Storyboard Agent 自动生成 VideoScript JSON 基础结构
-- **VideoScript Agent**（`pipeline/agents/video_script.py`）：调用 LLM 从 script_full 提取面向观众的 `display_points` 和纯口播 `narration`，合并进 VideoScript JSON
-- **TTS 文本清洗**（`extract_narration()`）：过滤 `**[画面提示]**`、`【语气指令】`、`⚠️` 等制作标注，TTS 合成框默认显示清洗后文本
-- **Remotion 组件 display_points 改造**：TextCard/TitleCard/AIImageCard 改为优先使用 `display_points`，不再渲染 `visual_description`/`key_elements`
-- **orchestrator 改造**：流水线加入 `video_script` 节点（`storyboard → video_script → gate_3`）
+- VideoScript Agent 从 script_full 提取 display_points 和 narration
 
 ---
 
 ## 后续计划
 
-### 近期（高优先级）
-1. **storyboard prompt 直出 display_points**：让 LLM 在生成分镜时同时产出 `display_points`，减少 VideoScript Agent 单独调用的 LLM 消耗
-2. **chart_data 结构化**：VideoScript Agent 或专用工具从脚本中提取真实数值，生成可渲染的 `chart_data`（目前 chart 段落靠 visual agent 手动填充）
-3. **Remotion 替代 ffmpeg compose**：orchestrator 成片阶段改为调用 `remotion/render.py`，彻底废弃 `tools/composer.py`
-
-### 中期
 - Script Agent prompt 优化（内容深度不足）
 - 各 Agent 输入输出日志透明化
+- chart_data 结构化数据填充（目前 chart 段落靠 visual agent 手动填）
 
 ---
 
@@ -97,7 +97,7 @@ remotion/render.py  →  npx remotion render  →  MP4
 git checkout main
 git pull
 
-# 2. 开/切功能分支（如 remotion-change）
+# 2. 开/切功能分支
 git checkout -b <branch-name>        # 首次创建
 # 或
 git checkout <branch-name>           # 已有分支
@@ -127,8 +127,3 @@ git push origin --delete <branch-name>        # 删远端
 - **merge 用 `--no-ff`**，保留分支拓扑（想让 main 更干净可改用 `--squash`）
 - **先 push 分支再 merge**，分支有备份；merge 后再 push main
 - **查分支**：`git branch` 看本地，`git branch -a` 看远端，`git reflog` 看所有 HEAD 历史（误删兜底）
-
-### 当前活跃分支
-
-- `main` — 主线
-- `remotion-change` — remotion-video 改造（套用 remotion-video-skill 技巧、删除旧 remotion/）

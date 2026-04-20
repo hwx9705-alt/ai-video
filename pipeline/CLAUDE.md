@@ -3,7 +3,7 @@
 仿「小Lin说」风格的 B 站财经科普视频自动化生产系统。
 Streamlit Web UI，多 Agent 流水线，每个节点有人工审核门。
 
-主渲染器：`/home/ubuntu/video-ai/remotion`（Remotion 动态视频，ffmpeg compose 待废弃）
+主渲染器：`/home/ubuntu/video-ai/remotion-video`（Remotion 动态视频组件库，11 个动画组件）
 
 ---
 
