@@ -9,7 +9,7 @@ const AnyComposition = Composition as any;
 // Demo 分镜：覆盖全部 9 种组件，主题「智能驾驶」
 const DEMO_STORYBOARD: StoryboardData = {
   title: "智能驾驶：驶向未来",
-  totalDurationInSeconds: 186,
+  totalDurationInSeconds: 222,
   fps: 30,
   width: 1920,
   height: 1080,
