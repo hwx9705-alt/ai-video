@@ -203,6 +203,24 @@ const DEMO_STORYBOARD: StoryboardData = {
     },
     {
       id: 14,
+      component: "PieChartAnimated",
+      props: {
+        title: "2025 中国智驾市场份额",
+        data: [
+          { label: "华为 ADS", value: 28 },
+          { label: "特斯拉 FSD", value: 24 },
+          { label: "小鹏 XNGP", value: 16 },
+          { label: "理想 AD", value: 12 },
+          { label: "其他", value: 20 },
+        ],
+        centerLabel: "总计",
+        unit: "%",
+      },
+      durationInSeconds: 14,
+      transition: "fade",
+    },
+    {
+      id: 15,
       component: "KeyPoint",
       props: {
         text: "未来已来，只是还未均匀分布",

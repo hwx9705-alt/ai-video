@@ -6,12 +6,14 @@ export type ComponentName =
   | "DataReveal"
   | "BarChartAnimated"
   | "LineChartAnimated"
+  | "PieChartAnimated"
   | "CompareTwo"
   | "FlowSteps"
   | "KeyPoint"
   | "TitleCard"
   | "BulletList"
-  | "ImageWithOverlay";
+  | "ImageWithOverlay"
+  | "TypewriterText";
 
 export interface SegmentBackground {
   type: "solid" | "gradient" | "image";
@@ -62,6 +64,13 @@ export interface LineChartAnimatedProps {
   data: Array<{ x: string; y: number }>;
   unit?: string;
   annotations?: Array<{ x: string; text: string }>;
+}
+
+export interface PieChartAnimatedProps {
+  title: string;
+  data: Array<{ label: string; value: number; color?: string }>;
+  centerLabel?: string;
+  unit?: string;
 }
 
 export interface CompareTwoProps {
