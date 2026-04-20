@@ -9,7 +9,7 @@ const AnyComposition = Composition as any;
 // Demo 分镜：覆盖全部 9 种组件，主题「智能驾驶」
 const DEMO_STORYBOARD: StoryboardData = {
   title: "智能驾驶：驶向未来",
-  totalDurationInSeconds: 186,
+  totalDurationInSeconds: 222,
   fps: 30,
   width: 1920,
   height: 1080,
@@ -182,9 +182,9 @@ const DEMO_STORYBOARD: StoryboardData = {
       id: 12,
       component: "KeyPoint",
       props: {
-        text: "智能驾驶不是「代替人」，而是让每辆车都拥有一位经验丰富的老司机",
+        text: "智能驾驶不是代替人，而是让每辆车都拥有一位经验丰富的老司机",
         emphasis: ["代替人", "老司机"],
-        style: "statement",
+        style: "highlight",
       },
       durationInSeconds: 12,
       transition: "fade",
@@ -202,7 +202,54 @@ const DEMO_STORYBOARD: StoryboardData = {
       transition: "fade",
     },
     {
+      id: 13.5,
+      component: "FlowSteps",
+      props: {
+        title: "数据飞轮 — 四步闭环",
+        steps: [
+          { label: "车辆采集", description: "摄像头雷达记录 Corner Case" },
+          { label: "上传云端", description: "加密脱敏传至 GPU 集群" },
+          { label: "训练 AI", description: "海量数据喂养模型" },
+          { label: "OTA 升级", description: "新模型推送到每辆车" },
+        ],
+        direction: "circular",
+        centerIcon: "↻",
+      },
+      durationInSeconds: 12,
+      transition: "fade",
+    },
+    {
       id: 14,
+      component: "PieChartAnimated",
+      props: {
+        title: "2025 中国智驾市场份额",
+        data: [
+          { label: "华为 ADS", value: 28 },
+          { label: "特斯拉 FSD", value: 24 },
+          { label: "小鹏 XNGP", value: 16 },
+          { label: "理想 AD", value: 12 },
+          { label: "其他", value: 20 },
+        ],
+        centerLabel: "总计",
+        unit: "%",
+      },
+      durationInSeconds: 14,
+      transition: "fade",
+    },
+    {
+      id: 15,
+      component: "TypewriterText",
+      props: {
+        title: "华为春节战报",
+        text: "华为春节狂飙 3.73亿公里！",
+        charsPerSecond: 7,
+        highlight: "3.73亿公里",
+      },
+      durationInSeconds: 10,
+      transition: "fade",
+    },
+    {
+      id: 16,
       component: "KeyPoint",
       props: {
         text: "未来已来，只是还未均匀分布",

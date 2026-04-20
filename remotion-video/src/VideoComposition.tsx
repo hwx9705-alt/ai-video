@@ -4,7 +4,12 @@
  */
 import { AbsoluteFill, Audio, Sequence, Series, staticFile } from "remotion";
 import { COMPONENT_MAP } from "./components";
-import { FadeIn, FadeOverlay } from "./components/Transition";
+import {
+  FadeIn,
+  FadeOverlay,
+  SlideIn,
+  SlideOverlay,
+} from "./components/Transition";
 import { theme } from "./design-system";
 import type { Segment, StoryboardData } from "./types";
 
@@ -63,18 +68,24 @@ export const VideoComposition: React.FC<Props> = ({ storyboard }) => {
           const frames = segFrames(seg, fps);
           const bg = getSegmentBackground(seg);
 
+          const transition = seg.transition || "fade";
+          const InComp =
+            transition === "slide" ? SlideIn : transition === "cut" ? null : FadeIn;
+          const OutComp =
+            transition === "slide" ? SlideOverlay : transition === "cut" ? null : FadeOverlay;
+
           return (
             <Series.Sequence key={seg.id} durationInFrames={frames}>
               <AbsoluteFill style={{ backgroundColor: bg }}>
                 {renderSegment(seg)}
 
-                {/* 淡入 */}
-                <FadeIn durationInFrames={FADE_FRAMES} color={bg} />
+                {InComp && <InComp durationInFrames={FADE_FRAMES} color={bg} />}
 
-                {/* 淡出（仅最后 FADE_FRAMES 帧） */}
-                <Sequence from={frames - FADE_FRAMES} durationInFrames={FADE_FRAMES}>
-                  <FadeOverlay durationInFrames={FADE_FRAMES} color={bg} />
-                </Sequence>
+                {OutComp && (
+                  <Sequence from={frames - FADE_FRAMES} durationInFrames={FADE_FRAMES}>
+                    <OutComp durationInFrames={FADE_FRAMES} color={bg} />
+                  </Sequence>
+                )}
               </AbsoluteFill>
             </Series.Sequence>
           );

@@ -1,6 +1,6 @@
 /**
  * ImageWithOverlay — 图片全屏展示 + 文字叠层
- * Ken Burns 慢缩放，暗色渐变遮罩，文字从底部滑入
+ * Ken Burns 慢缩放；title/subtitle 字号 fitText 自适应容器宽。
  */
 import {
   AbsoluteFill,
@@ -11,7 +11,9 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
+import { fitText } from "@remotion/layout-utils";
 import { theme } from "../design-system";
+import { fontFamily } from "../fonts";
 import type { ImageWithOverlayProps } from "../types";
 
 export const ImageWithOverlay: React.FC<ImageWithOverlayProps> = ({
@@ -21,38 +23,47 @@ export const ImageWithOverlay: React.FC<ImageWithOverlayProps> = ({
   subtitle,
 }) => {
   const frame = useCurrentFrame();
-  const { fps, durationInFrames } = useVideoConfig();
+  const { fps, durationInFrames, width } = useVideoConfig();
 
-  // 图片淡入
   const imgAnim = spring({
     frame,
     fps,
-    config: { damping: 20, stiffness: 50 },
+    config: theme.springs.gentle,
     durationInFrames: 40,
   });
   const imgOpacity = interpolate(imgAnim, [0, 1], [0, 1]);
 
-  // Ken Burns：整个 segment 时长内缓慢放大 100% → 108%
-  const kenBurnsScale = interpolate(frame, [0, durationInFrames], [1.0, 1.08]);
+  // Ken Burns：整 segment 缓慢放大 1.0 → 1.1
+  const kenBurnsScale = interpolate(frame, [0, durationInFrames], [1.0, 1.1]);
 
-  // 文字从底部滑入（延迟 20 帧）
   const textAnim = spring({
     frame: frame - 20,
     fps,
-    config: { damping: 16, stiffness: 80 },
+    config: theme.springs.smooth,
     durationInFrames: 35,
   });
   const textY = interpolate(textAnim, [0, 1], [60, 0]);
   const textOpacity = interpolate(textAnim, [0, 1], [0, 1]);
 
-  // 判断是否为网络图片
+  // fitText
+  const availWidth = width - 160;
+  const titleFit = fitText({
+    text: title,
+    withinWidth: availWidth,
+    fontFamily,
+    fontWeight: "900",
+  });
+  const titleFontSize = Math.min(titleFit.fontSize, theme.fontSize.hero);
+  const subtitleFontSize = Math.round(titleFontSize * 0.55);
+
   const isRemote = imageSrc.startsWith("http://") || imageSrc.startsWith("https://");
   const imgSrc = isRemote ? imageSrc : staticFile(imageSrc);
 
   return (
     <AbsoluteFill style={{ backgroundColor: "#000", overflow: "hidden" }}>
-      {/* 背景图 */}
-      <AbsoluteFill style={{ transform: `scale(${kenBurnsScale})`, transformOrigin: "center" }}>
+      <AbsoluteFill
+        style={{ transform: `scale(${kenBurnsScale})`, transformOrigin: "center" }}
+      >
         <Img
           src={imgSrc}
           style={{
@@ -64,18 +75,16 @@ export const ImageWithOverlay: React.FC<ImageWithOverlayProps> = ({
         />
       </AbsoluteFill>
 
-      {/* 渐变遮罩 */}
       <AbsoluteFill
         style={{
           background: `linear-gradient(to top, rgba(0,0,0,${overlayOpacity + 0.3}) 0%, rgba(0,0,0,${overlayOpacity}) 40%, rgba(0,0,0,0.1) 100%)`,
         }}
       />
 
-      {/* 文字叠层 */}
       <div
         style={{
           position: "absolute",
-          bottom: 80,
+          bottom: 100,
           left: 80,
           right: 80,
           opacity: textOpacity,
@@ -85,7 +94,7 @@ export const ImageWithOverlay: React.FC<ImageWithOverlayProps> = ({
       >
         <div
           style={{
-            fontSize: 64,
+            fontSize: titleFontSize,
             fontWeight: 900,
             color: "#ffffff",
             textShadow: "0 3px 16px rgba(0,0,0,0.9)",
@@ -97,9 +106,9 @@ export const ImageWithOverlay: React.FC<ImageWithOverlayProps> = ({
         {subtitle && (
           <div
             style={{
-              fontSize: 34,
-              color: "rgba(255,255,255,0.85)",
-              marginTop: 16,
+              fontSize: subtitleFontSize,
+              color: "rgba(255,255,255,0.88)",
+              marginTop: 20,
               lineHeight: 1.5,
               textShadow: "0 2px 8px rgba(0,0,0,0.8)",
             }}

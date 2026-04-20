@@ -1,4 +1,7 @@
 import { registerRoot } from "remotion";
 import { RemotionRoot } from "./Root";
+import { waitUntilDone } from "./fonts";
 
-registerRoot(RemotionRoot);
+waitUntilDone().then(() => {
+  registerRoot(RemotionRoot);
+});

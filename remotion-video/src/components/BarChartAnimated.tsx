@@ -1,9 +1,18 @@
 /**
  * BarChartAnimated — 柱状图
- * 柱子从底部依次生长，每根错帧 8 帧
+ * 柱子 spring 依次生长 + 渐变 + 发光；数值标签 easeOut countUp + 延迟渐现；
+ * X 轴标签 measureText 动态选字号；Y 轴刻度自动生成。
  */
-import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
-import { theme } from "../design-system";
+import {
+  AbsoluteFill,
+  interpolate,
+  spring,
+  useCurrentFrame,
+  useVideoConfig,
+} from "remotion";
+import { measureText } from "@remotion/layout-utils";
+import { theme, barGradient, glowShadow } from "../design-system";
+import { fontFamily } from "../fonts";
 import type { BarChartAnimatedProps } from "../types";
 
 const DEFAULT_COLORS = [
@@ -15,10 +24,16 @@ const DEFAULT_COLORS = [
   "#80deea",
 ];
 
-const CHART_H = 440;
-const BAR_DELAY = 8;
-const GAP = 20;
-const PAD = 16;
+const BAR_DELAY = 6;
+const GAP = 24;
+
+function computeYSteps(maxVal: number): number[] {
+  // 取 4 档刻度，向上取整到合理的量级
+  const magnitude = Math.pow(10, Math.floor(Math.log10(maxVal)));
+  const ceilMax = Math.ceil(maxVal / magnitude) * magnitude;
+  const step = ceilMax / 4;
+  return [0, step, step * 2, step * 3, ceilMax];
+}
 
 export const BarChartAnimated: React.FC<BarChartAnimatedProps> = ({
   title,
@@ -27,32 +42,42 @@ export const BarChartAnimated: React.FC<BarChartAnimatedProps> = ({
   highlightIndex,
 }) => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
+  const { fps, width, height } = useVideoConfig();
 
   const maxVal = Math.max(...data.map((d) => d.value), 1);
-  const barW = Math.min(120, Math.floor(1400 / data.length) - 32);
+  const ySteps = computeYSteps(maxVal);
+  const yMax = ySteps[ySteps.length - 1];
 
-  const titleAnim = spring({ frame, fps, config: { damping: 20, stiffness: 80 }, durationInFrames: 25 });
+  // X 轴标签：根据最长标签选字号（label 26 / small 20）
+  const maxLabel = data.reduce((a, d) => (d.label.length > a.length ? d.label : a), "");
+  const chartAreaWidth = width - 2 * theme.spacing.pagePadding - 120;
+  const perLabelWidth = chartAreaWidth / data.length - 16;
+  const labelAt = (size: number) =>
+    measureText({ text: maxLabel, fontFamily, fontSize: size, fontWeight: "400" }).width;
+  const xLabelFontSize =
+    labelAt(theme.fontSize.label) <= perLabelWidth
+      ? theme.fontSize.label
+      : theme.fontSize.small;
+
+  const chartHeight = height - 420;
+  const titleAnim = spring({ frame, fps, config: theme.springs.gentle, durationInFrames: 25 });
 
   return (
     <AbsoluteFill
       style={{
         backgroundColor: theme.colors.background,
+        padding: `60px ${theme.spacing.pagePadding}px`,
         display: "flex",
         flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: `60px ${theme.spacing.pagePadding}px`,
+        gap: 24,
         fontFamily: theme.fonts.title,
       }}
     >
-      {/* 标题 */}
       <div
         style={{
           fontSize: theme.fontSize.title,
           fontWeight: 800,
           color: theme.colors.accent,
-          marginBottom: 48,
           textAlign: "center",
           opacity: interpolate(titleAnim, [0, 1], [0, 1]),
           transform: `translateY(${interpolate(titleAnim, [0, 1], [-20, 0])}px)`,
@@ -62,103 +87,142 @@ export const BarChartAnimated: React.FC<BarChartAnimatedProps> = ({
         {title}
       </div>
 
-      {/* 图表容器：柱区 + X轴，同一 flex 列 */}
-      <div style={{ width: "100%", display: "flex", flexDirection: "column" }}>
-        {/* 柱区：fixed height，柱子和值标签均绝对定位 */}
+      <div style={{ display: "flex", flex: 1, gap: 20, marginTop: 12 }}>
+        {/* Y 轴刻度 */}
         <div
           style={{
             display: "flex",
-            alignItems: "stretch",
-            gap: GAP,
-            height: CHART_H,
-            paddingLeft: PAD,
-            paddingRight: PAD,
-            borderBottom: `2px solid ${theme.colors.border}`,
+            flexDirection: "column",
+            justifyContent: "space-between",
+            height: chartHeight,
+            paddingRight: 16,
+            borderRight: `2px solid ${theme.colors.border}`,
           }}
         >
-          {data.map((item, i) => {
-            const progress = spring({
-              frame: frame - i * BAR_DELAY,
-              fps,
-              config: { damping: 14, stiffness: 70, mass: 1.2 },
-              durationInFrames: 45,
-            });
-            const barH = interpolate(progress, [0, 1], [0, (item.value / maxVal) * CHART_H]);
-            const color = item.color || DEFAULT_COLORS[i % DEFAULT_COLORS.length];
-            const isHighlighted = highlightIndex === i;
-            const showLabel = progress > 0.85;
-
-            return (
+          {ySteps
+            .slice()
+            .reverse()
+            .map((s) => (
               <div
-                key={i}
+                key={s}
                 style={{
-                  flex: 1,
-                  position: "relative",
+                  color: theme.colors.textSecondary,
+                  fontSize: theme.fontSize.small,
+                  textAlign: "right",
+                  fontFamily: theme.fonts.data,
                 }}
               >
-                {/* 数值标签：绝对定位在柱顶上方 */}
-                <div
-                  style={{
-                    position: "absolute",
-                    bottom: barH + 8,
-                    left: 0,
-                    right: 0,
-                    textAlign: "center",
-                    fontSize: theme.fontSize.label,
-                    fontWeight: 700,
-                    color: theme.colors.text,
-                    fontFamily: theme.fonts.data,
-                    opacity: showLabel ? 1 : 0,
-                    pointerEvents: "none",
-                  }}
-                >
-                  {showLabel ? `${item.value}${unit}` : ""}
-                </div>
-
-                {/* 柱子：从底部向上生长 */}
-                <div
-                  style={{
-                    position: "absolute",
-                    bottom: 0,
-                    left: "50%",
-                    transform: "translateX(-50%)",
-                    width: barW,
-                    height: barH,
-                    backgroundColor: color,
-                    borderRadius: "6px 6px 0 0",
-                    boxShadow: isHighlighted ? `0 0 24px ${color}88` : "none",
-                    border: isHighlighted ? `2px solid ${color}` : "none",
-                  }}
-                />
+                {s}
+                {unit}
               </div>
-            );
-          })}
+            ))}
         </div>
 
-        {/* X 轴标签：与柱区用相同 gap + padding，保证对齐 */}
-        <div
-          style={{
-            display: "flex",
-            gap: GAP,
-            paddingLeft: PAD,
-            paddingRight: PAD,
-            marginTop: 14,
-          }}
-        >
-          {data.map((item, i) => (
-            <div
-              key={i}
-              style={{
-                flex: 1,
-                textAlign: "center",
-                fontSize: theme.fontSize.label,
-                color: theme.colors.textSecondary,
-                lineHeight: 1.3,
-              }}
-            >
-              {item.label}
-            </div>
-          ))}
+        {/* 柱区 + X 轴 */}
+        <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "flex-end",
+              height: chartHeight,
+              borderBottom: `2px solid ${theme.colors.border}`,
+              gap: GAP,
+            }}
+          >
+            {data.map((item, i) => {
+              const progress = spring({
+                frame: frame - i * BAR_DELAY - 10,
+                fps,
+                config: theme.springs.smooth,
+                durationInFrames: 45,
+              });
+              const valueOpacity = interpolate(
+                frame - i * BAR_DELAY - 35,
+                [0, 15],
+                [0, 1],
+                { extrapolateLeft: "clamp", extrapolateRight: "clamp" },
+              );
+              const valueProgress = interpolate(
+                frame - i * BAR_DELAY - 20,
+                [0, 30],
+                [0, 1],
+                {
+                  extrapolateLeft: "clamp",
+                  extrapolateRight: "clamp",
+                  easing: theme.easings.easeOutCubic,
+                },
+              );
+              const displayValue = Math.round(item.value * valueProgress);
+
+              const barH = (item.value / yMax) * chartHeight * progress;
+              const color = item.color || DEFAULT_COLORS[i % DEFAULT_COLORS.length];
+              const isHighlighted = highlightIndex === i;
+
+              return (
+                <div
+                  key={i}
+                  style={{
+                    flex: 1,
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "flex-end",
+                    alignItems: "center",
+                    gap: 10,
+                  }}
+                >
+                  <div
+                    style={{
+                      opacity: valueOpacity,
+                      color,
+                      fontSize: theme.fontSize.label,
+                      fontWeight: 900,
+                      fontFamily: theme.fonts.data,
+                      fontVariantNumeric: "tabular-nums",
+                    }}
+                  >
+                    {displayValue}
+                    {unit}
+                  </div>
+                  <div
+                    style={{
+                      width: "72%",
+                      height: barH,
+                      background: barGradient(color),
+                      borderRadius: "8px 8px 0 0",
+                      boxShadow: glowShadow(color, isHighlighted ? 40 : 24),
+                      opacity: progress,
+                      outline: isHighlighted ? `2px solid ${color}` : "none",
+                      outlineOffset: 2,
+                    }}
+                  />
+                </div>
+              );
+            })}
+          </div>
+
+          <div style={{ display: "flex", gap: GAP, marginTop: 16 }}>
+            {data.map((item, i) => {
+              const labelOp = interpolate(frame - i * BAR_DELAY - 15, [0, 15], [0, 1], {
+                extrapolateLeft: "clamp",
+                extrapolateRight: "clamp",
+              });
+              return (
+                <div
+                  key={i}
+                  style={{
+                    flex: 1,
+                    opacity: labelOp,
+                    textAlign: "center",
+                    fontSize: xLabelFontSize,
+                    color: theme.colors.textSecondary,
+                    lineHeight: 1.3,
+                  }}
+                >
+                  {item.label}
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     </AbsoluteFill>

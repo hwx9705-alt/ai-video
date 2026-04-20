@@ -3,8 +3,8 @@
  * stroke-dashoffset 从左到右绘制，标注在线到达时弹出
  * 使用纯 JS 欧氏距离计算路径长度，保证 headless 渲染稳定
  */
-import { AbsoluteFill, interpolate, useCurrentFrame } from "remotion";
-import { theme } from "../design-system";
+import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
+import { theme, glowShadow } from "../design-system";
 import type { LineChartAnimatedProps } from "../types";
 
 const SVG_W = 1400;
@@ -36,6 +36,7 @@ export const LineChartAnimated: React.FC<LineChartAnimatedProps> = ({
   annotations = [],
 }) => {
   const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
 
   const xCount = data.length;
   const maxY = Math.max(...data.map((d) => d.y), 1);
@@ -92,7 +93,7 @@ export const LineChartAnimated: React.FC<LineChartAnimatedProps> = ({
             position: "absolute",
             left: 24,
             top: "48%",
-            fontSize: 20,
+            fontSize: theme.fontSize.small,
             color: theme.colors.textMuted,
             transform: "rotate(-90deg) translateX(-50%)",
           }}
@@ -106,7 +107,7 @@ export const LineChartAnimated: React.FC<LineChartAnimatedProps> = ({
         {yTicks.map(({ val, y }) => (
           <g key={y}>
             <line x1={M.left} y1={y} x2={SVG_W - M.right} y2={y} stroke={`${theme.colors.border}`} strokeWidth={1} />
-            <text x={M.left - 10} y={y + 6} textAnchor="end" fontSize={20} fill={theme.colors.textMuted}>
+            <text x={M.left - 10} y={y + 6} textAnchor="end" fontSize={theme.fontSize.small} fill={theme.colors.textMuted}>
               {val >= 10000 ? `${(val / 10000).toFixed(1)}w` : val >= 1000 ? `${(val / 1000).toFixed(1)}k` : val.toFixed(val < 10 ? 1 : 0)}
             </text>
           </g>
@@ -119,28 +120,56 @@ export const LineChartAnimated: React.FC<LineChartAnimatedProps> = ({
 
         {/* X 轴标签 */}
         {data.map((d, i) => (
-          <text key={i} x={toX(i)} y={M.top + CH + 40} textAnchor="middle" fontSize={22} fill={theme.colors.textSecondary}>
+          <text key={i} x={toX(i)} y={M.top + CH + 40} textAnchor="middle" fontSize={theme.fontSize.label} fill={theme.colors.textSecondary}>
             {d.x}
           </text>
         ))}
 
-        {/* 折线 */}
+        {/* 折线（带发光 filter） */}
+        <defs>
+          <filter id="lineGlow">
+            <feGaussianBlur stdDeviation="4" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
         <path
           d={pathD}
           fill="none"
           stroke={theme.colors.primary}
-          strokeWidth={4}
+          strokeWidth={5}
           strokeDasharray={totalLen}
           strokeDashoffset={dashOffset}
           strokeLinecap="round"
           strokeLinejoin="round"
+          filter="url(#lineGlow)"
         />
 
-        {/* 数据点 */}
+        {/* 数据点（spring drop-in） */}
         {pts.map(([px, py], i) => {
-          const dotOpacity = Math.min(1, Math.max(0, currentXProgress - i + 0.5));
+          const dotStart = DRAW_FRAMES * (i / Math.max(1, pts.length - 1));
+          const dotSpring = spring({
+            frame: frame - dotStart - 8,
+            fps,
+            config: theme.springs.snappy,
+            durationInFrames: 20,
+          });
+          const r = 4 + 4 * Math.max(0, Math.min(1, dotSpring));
+          const dotOpacity = Math.max(0, Math.min(1, dotSpring));
           return (
-            <circle key={i} cx={px} cy={py} r={6} fill={theme.colors.primary} opacity={dotOpacity} />
+            <circle
+              key={i}
+              cx={px}
+              cy={py}
+              r={r}
+              fill={theme.colors.primary}
+              stroke={theme.colors.background}
+              strokeWidth={2}
+              opacity={dotOpacity}
+              style={{ filter: `drop-shadow(${glowShadow(theme.colors.primary, 8)})` }}
+            />
           );
         })}
 
@@ -148,7 +177,7 @@ export const LineChartAnimated: React.FC<LineChartAnimatedProps> = ({
         {pts.map(([px, py], i) => {
           const labelOpacity = Math.min(1, Math.max(0, (currentXProgress - i) * 3));
           return (
-            <text key={i} x={px} y={py - 14} textAnchor="middle" fontSize={20} fill={theme.colors.primary} fontWeight={700} opacity={labelOpacity}>
+            <text key={i} x={px} y={py - 18} textAnchor="middle" fontSize={theme.fontSize.small} fill={theme.colors.primary} fontWeight={700} opacity={labelOpacity}>
               {data[i].y}{unit}
             </text>
           );
@@ -163,8 +192,8 @@ export const LineChartAnimated: React.FC<LineChartAnimatedProps> = ({
           const py = toY(data[dataIdx].y);
           return (
             <g key={i} opacity={annOpacity}>
-              <rect x={px + 10} y={py - 40} width={ann.text.length * 14 + 16} height={34} rx={6} fill={theme.colors.surface} />
-              <text x={px + 18} y={py - 18} fontSize={20} fill={theme.colors.accent} fontWeight={700}>{ann.text}</text>
+              <rect x={px + 10} y={py - 44} width={ann.text.length * 16 + 20} height={38} rx={6} fill={theme.colors.surface} />
+              <text x={px + 20} y={py - 18} fontSize={theme.fontSize.small} fill={theme.colors.accent} fontWeight={700}>{ann.text}</text>
             </g>
           );
         })}

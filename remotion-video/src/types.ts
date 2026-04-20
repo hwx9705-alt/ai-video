@@ -6,12 +6,14 @@ export type ComponentName =
   | "DataReveal"
   | "BarChartAnimated"
   | "LineChartAnimated"
+  | "PieChartAnimated"
   | "CompareTwo"
   | "FlowSteps"
   | "KeyPoint"
   | "TitleCard"
   | "BulletList"
-  | "ImageWithOverlay";
+  | "ImageWithOverlay"
+  | "TypewriterText";
 
 export interface SegmentBackground {
   type: "solid" | "gradient" | "image";
@@ -64,6 +66,13 @@ export interface LineChartAnimatedProps {
   annotations?: Array<{ x: string; text: string }>;
 }
 
+export interface PieChartAnimatedProps {
+  title: string;
+  data: Array<{ label: string; value: number; color?: string }>;
+  centerLabel?: string;
+  unit?: string;
+}
+
 export interface CompareTwoProps {
   title: string;
   left: { label: string; points: string[]; color?: string };
@@ -74,13 +83,14 @@ export interface CompareTwoProps {
 export interface FlowStepsProps {
   title: string;
   steps: Array<{ label: string; description?: string }>;
-  direction?: "horizontal" | "vertical";
+  direction?: "horizontal" | "vertical" | "circular";
+  centerIcon?: string; // direction=circular 时中央装饰字符（emoji 等）
 }
 
 export interface KeyPointProps {
   text: string;
   emphasis?: string[];
-  style?: "quote" | "statement" | "question";
+  style?: "quote" | "statement" | "question" | "highlight";
 }
 
 export interface TitleCardProps {
@@ -99,4 +109,12 @@ export interface ImageWithOverlayProps {
   overlayOpacity?: number; // 0~1，默认 0.5
   title: string;
   subtitle?: string;
+}
+
+export interface TypewriterTextProps {
+  text: string;
+  title?: string;
+  charsPerSecond?: number; // 默认 8
+  highlight?: string; // 可选高亮子串，打到该处变色
+  showCursor?: boolean; // 默认 true
 }
