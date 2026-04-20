@@ -47,18 +47,41 @@ streamlit run app.py --server.port 8501 --server.headless true
 │   ├── __init__.py      # BaseAgent（requests 直连 LLM）
 │   ├── research.py      # Research（DeepSeek + Tavily）
 │   ├── topic.py         # Topic（选题策划）
-│   ├── script.py        # Script（大纲→脚本→AI自审，Kimi）
+│   ├── _knowledge.py    # 从 knowledge_base/xiaolin/examples/ 加载 prompt 注入素材
+│   ├── script.py        # Script（大纲→脚本→AI自审，Kimi）含 {STRUCTURES}/{TECHNIQUES}/{OPENINGS} 占位符
 │   ├── storyboard.py    # Storyboard（分镜+视觉风格+VideoScript JSON 基础结构）
 │   ├── video_script.py  # VideoScript（LLM 提取 display_points + narration，供 Remotion 渲染）
 │   └── visual.py        # Visual（图表+AI生图）
+├── knowledge_base/      # 风格素材库（docx 预处理产物 + prompt 注入示例）
+│   └── xiaolin/
+│       ├── scripts/     # 9 份小 Lin 原稿（md）+ 2 篇用户脉络分析
+│       └── examples/    # 5 结构 + 10 技巧 + 3 开头（script.py 启动时 glob 读取）
 └── tools/
     ├── chart_generator.py   # Plotly/Matplotlib 图表
     ├── image_generator.py   # AI 生图（SiliconFlow Kolors）
     ├── audio_processor.py   # ffmpeg 音频处理（标准化+BGM混音）
     ├── tts_generator.py     # AI 语音合成（SiliconFlow CosyVoice2）含 extract_narration()
     ├── composer.py          # ffmpeg 视频合成（待被 Remotion 替代）
-    └── bgm_finder.py        # BGM 搜索
+    ├── bgm_finder.py        # BGM 搜索
+    └── convert_docx.py      # 小 Lin 原稿 docx → md 一次性工具
 ```
+
+---
+
+## 风格素材库（knowledge_base/xiaolin/）
+
+Script Agent 启动时从 `knowledge_base/xiaolin/examples/` 动态读取示例注入 prompt。详见 `knowledge_base/README.md`。
+
+**追加新稿流程**：
+1. 把 docx 扔进 `/home/ubuntu/upload/小lin说文字稿/`
+2. `venv/bin/python tools/convert_docx.py`（重跑转换，新 md 自动落到 `knowledge_base/xiaolin/scripts/`）
+3. 如果需要提炼新的 structure/technique/opening 示例，直接在 `knowledge_base/xiaolin/examples/{类别}/` 下加 `.md` 文件
+4. `pm2 restart video-ai` 生效（loader 有 lru_cache，必须重启）
+
+**当前素材覆盖率**：
+- structures/ 5 个（常识颠覆/机构揭秘/横向对比/视野升级/期望管理）
+- techniques/ 10 个（两步翻译、历史因果链、对偶标签、先解药再揭短、共情视角、搭建预期摧毁、一词定调、段落转折、冷知识、自造金句）
+- openings/ 3 个（数据震撼、权力感排比、共情代入）
 
 ---
 

@@ -60,11 +60,40 @@ remotion-video/render.py  →  npx remotion render  →  MP4
 - Transition 升级支持 fade / slide / cut 三种模式
 - generate_storyboard.py LLM prompt 同步更新教会 pipeline 选择新组件
 
+### Script Agent 小 Lin 风格深化（script-prompt-v2 分支）
+- 新建 `pipeline/knowledge_base/xiaolin/` 素材库（8 万字 docx 转 md + 18 份示例）
+- `pipeline/agents/_knowledge.py` 加载器（Path.glob，无 RAG）
+- `script.py` 的 OUTLINE/SCRIPT prompt 改占位符动态注入：结构 5/5、技巧 10/10、开头 3/3 全覆盖（原只有 1/5 + 2/10 + 0/3）
+- 强制稿末输出"本稿使用的技巧清单"并逐段标注
+- Kimi 自审正向化：技巧落地核对 + 多样性 ≥4 + 尾段质量守护
+- 用户后续追加小 Lin 原稿只需 drop 进 `/home/ubuntu/upload/小lin说文字稿/` 重跑 convert_docx 再 pm2 restart
+
 ### 原有里程碑
 - 全流水线跑通（research → storyboard → Remotion render）
 - gate_3 TTS 语音合成（SiliconFlow CosyVoice2-0.5B，8 种音色）
 - gate_3 触发 Remotion 渲染（后台线程，轮询状态，视频预览）
 - VideoScript Agent 从 script_full 提取 display_points 和 narration
+
+---
+
+## Rollback 机制（回撤选项）
+
+每次大改造合并到 main 都用 `git merge --no-ff <branch>`，生成的 merge commit 是回撤锚点：
+
+```bash
+# 查合并点
+git log --oneline --merges main
+
+# 整体回撤某次改造（连 merge commit 一起撤）
+git revert -m 1 <merge-commit-sha>
+git push origin main
+```
+
+### 可回撤的改造锚点
+- **Remotion 组件库改造** — merge commit `8a4cbf7`（11 commits 合并入 main）
+- **Script Agent 小 Lin 风格深化** — merge commit `(script-prompt-v2 合并后记录)`
+
+分支本身也保留（`remotion-change`、`script-prompt-v2`），可作 checkout 参照。
 
 ---
 
