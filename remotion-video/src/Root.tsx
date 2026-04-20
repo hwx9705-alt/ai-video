@@ -182,9 +182,9 @@ const DEMO_STORYBOARD: StoryboardData = {
       id: 12,
       component: "KeyPoint",
       props: {
-        text: "智能驾驶不是「代替人」，而是让每辆车都拥有一位经验丰富的老司机",
+        text: "智能驾驶不是代替人，而是让每辆车都拥有一位经验丰富的老司机",
         emphasis: ["代替人", "老司机"],
-        style: "statement",
+        style: "highlight",
       },
       durationInSeconds: 12,
       transition: "fade",

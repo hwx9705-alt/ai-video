@@ -90,7 +90,7 @@ export interface FlowStepsProps {
 export interface KeyPointProps {
   text: string;
   emphasis?: string[];
-  style?: "quote" | "statement" | "question";
+  style?: "quote" | "statement" | "question" | "highlight";
 }
 
 export interface TitleCardProps {
