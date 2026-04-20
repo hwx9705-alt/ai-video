@@ -8,8 +8,9 @@
 
 ```
 /home/ubuntu/video-ai/
-├── pipeline/    # Python 流水线（Streamlit UI + Multi-Agent）
-└── remotion/    # Remotion 渲染器（React + TypeScript）
+├── pipeline/          # Python 流水线（Streamlit UI + Multi-Agent）
+├── remotion-video/    # ⭐ 主渲染器（React + TypeScript，Phase 2 已 pipeline 集成）
+└── remotion/          # 旧渲染器（initial commit 后未更新，计划在 remotion-change 分支删除）
 ```
 
 ---
@@ -82,3 +83,52 @@ remotion/render.py  →  npx remotion render  →  MP4
 - **Remotion 渲染**：必须设置 `BROWSER_EXECUTABLE_PATH=/usr/bin/chromium-browser`
 - **TTS voice 格式**：`FunAudioLLM/CosyVoice2-0.5B:{voice_name}`（必须带模型前缀）
 - **内容分离原则**：`display_points` 面向观众（显示在视频画面），`key_elements`/`visual_description` 仅供制作系统参考，**禁止渲染到视频**
+
+---
+
+## Git 工作流
+
+**远端**：`https://github.com/hwx9705-alt/ai-video.git`（origin）
+
+### 日常流程
+
+```bash
+# 1. 开工前：main 同步远端
+git checkout main
+git pull
+
+# 2. 开/切功能分支（如 remotion-change）
+git checkout -b <branch-name>        # 首次创建
+# 或
+git checkout <branch-name>           # 已有分支
+
+# 3. 改代码 → 测试 → 小步 commit
+git add <file>
+git commit -m "..."
+
+# 4. 推分支（留痕/多端同步）
+git push -u origin <branch-name>     # 首次加 -u，之后直接 git push
+
+# 5. 验收通过 → 合回 main
+git checkout main
+git pull                              # 再次同步，防止远端有新 commit
+git merge --no-ff <branch-name>       # 保留分支拓扑
+git push origin main
+
+# 6. 分支收尾（可选）
+git branch -d <branch-name>                   # 删本地
+git push origin --delete <branch-name>        # 删远端
+```
+
+### 关键约定
+
+- **不直接在 main 上改代码**，只在 main 上写文档/合并分支
+- **pull 只在 main 上做**，避免把远端 main 的提交混进 feature 分支
+- **merge 用 `--no-ff`**，保留分支拓扑（想让 main 更干净可改用 `--squash`）
+- **先 push 分支再 merge**，分支有备份；merge 后再 push main
+- **查分支**：`git branch` 看本地，`git branch -a` 看远端，`git reflog` 看所有 HEAD 历史（误删兜底）
+
+### 当前活跃分支
+
+- `main` — 主线
+- `remotion-change` — remotion-video 改造（套用 remotion-video-skill 技巧、删除旧 remotion/）
