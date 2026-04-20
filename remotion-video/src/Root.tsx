@@ -202,6 +202,23 @@ const DEMO_STORYBOARD: StoryboardData = {
       transition: "fade",
     },
     {
+      id: 13.5,
+      component: "FlowSteps",
+      props: {
+        title: "数据飞轮 — 四步闭环",
+        steps: [
+          { label: "车辆采集", description: "摄像头雷达记录 Corner Case" },
+          { label: "上传云端", description: "加密脱敏传至 GPU 集群" },
+          { label: "训练 AI", description: "海量数据喂养模型" },
+          { label: "OTA 升级", description: "新模型推送到每辆车" },
+        ],
+        direction: "circular",
+        centerIcon: "↻",
+      },
+      durationInSeconds: 12,
+      transition: "fade",
+    },
+    {
       id: 14,
       component: "PieChartAnimated",
       props: {

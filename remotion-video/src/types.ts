@@ -83,7 +83,8 @@ export interface CompareTwoProps {
 export interface FlowStepsProps {
   title: string;
   steps: Array<{ label: string; description?: string }>;
-  direction?: "horizontal" | "vertical";
+  direction?: "horizontal" | "vertical" | "circular";
+  centerIcon?: string; // direction=circular 时中央装饰字符（emoji 等）
 }
 
 export interface KeyPointProps {
