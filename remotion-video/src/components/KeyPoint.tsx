@@ -142,15 +142,13 @@ export const KeyPoint: React.FC<KeyPointProps> = ({
         {pointStyle === "highlight"
           ? parts.map((p, i) => {
               if (!p.emph) return <span key={i}>{p.text}</span>;
-              // highlight 擦除：每个 emph 词延迟 i*15 帧出现
-              const emphFrame = 40 + i * 15;
-              const wipeAnim = spring({
-                frame: frame - emphFrame,
-                fps,
-                config: theme.springs.impact,
-                durationInFrames: 20,
+              // highlight 擦除：单调 0→1，避免 spring 过冲回撤造成视觉卡顿
+              const emphFrame = 40 + i * 18;
+              const wipe = interpolate(frame, [emphFrame, emphFrame + 18], [0, 1], {
+                extrapolateLeft: "clamp",
+                extrapolateRight: "clamp",
+                easing: theme.easings.easeOutCubic,
               });
-              const wipe = Math.max(0, Math.min(1, wipeAnim));
               return (
                 <span
                   key={i}
