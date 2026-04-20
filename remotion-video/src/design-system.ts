@@ -3,6 +3,7 @@
  */
 
 import { Easing } from "remotion";
+import { fontFamily as cjkFontFamily } from "./fonts";
 
 export const theme = {
   colors: {
@@ -19,9 +20,9 @@ export const theme = {
     border: "#2a2a4a",
   },
   fonts: {
-    title: "'Noto Sans SC', 'Noto Sans CJK SC', 'PingFang SC', sans-serif",
-    body: "'Noto Sans SC', 'Noto Sans CJK SC', 'PingFang SC', sans-serif",
-    data: "'JetBrains Mono', 'Noto Sans Mono CJK SC', 'Courier New', monospace",
+    title: `${cjkFontFamily}, 'Noto Sans CJK SC', 'PingFang SC', sans-serif`,
+    body: `${cjkFontFamily}, 'Noto Sans CJK SC', 'PingFang SC', sans-serif`,
+    data: `'JetBrains Mono', ${cjkFontFamily}, 'Noto Sans Mono CJK SC', 'Courier New', monospace`,
   },
   fontSize: {
     hero: 96,
