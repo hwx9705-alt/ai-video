@@ -120,3 +120,30 @@ npx remotion studio
 - **渲染环境**：`BROWSER_EXECUTABLE_PATH=/usr/bin/chromium-browser`
 - **Props 传递**：通过文件传递（`--props=public/_render_props.json`），避免 CLI 长度限制
 - **ImageWithOverlay**：图片路径填 `assets/placeholder.jpg`，后续人工替换真实图片
+
+---
+
+## 当前进度（2026-04-13）
+
+### 已完成
+- Phase 1 独立闭环：9 个动画组件全部实现，demo 分镜渲染通过
+- Phase 2 pipeline 集成：storyboard.py / video_script.py / app.py 已改造对接
+- 端到端验证：智能驾驶脚本 → DeepSeek 生成 18 段分镜 → Remotion 渲染 MP4（186s）
+- Bug 修复 v2：全局字号放大（hero 96, title 64, subtitle 42, body 32, label 26）
+- Bug 修复 v2：BarChartAnimated 数值标签不再遮挡标题、X 轴标签与柱子对齐
+
+### 待实施：组件自适应布局改造
+
+**问题**：组件布局不随内容量调整，导致内容少时大量空白、字体偏小（如 CompareTwo 只有 3 条对比点但卡片撑满整屏）
+
+**方案**（详见 `自适应布局改造方案.md`）：
+1. 新建 `src/responsive.ts` — 共享缩放工具（`contentScale` / `textScale`）
+2. 修复 CompareTwo — 去 `flex: 1` 拉伸 + 字号自适应
+3. 修复 FlowSteps — 字号放大 + 去 `maxWidth: 200`
+4. 修复 BulletList — 条目少时字号放大
+5. 统一硬编码字号 → `theme.fontSize.*` + 缩放（KeyPoint / ImageWithOverlay / DataReveal）
+
+**根本原因**：
+- 容器 `flex: 1` + `alignItems: "stretch"` 强制撑满
+- 所有 fontSize 静态固定，不感知内容量
+- 数据契约不含布局参数（也不应该含，LLM 无法可靠生成）
