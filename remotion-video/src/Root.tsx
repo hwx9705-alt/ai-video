@@ -221,6 +221,18 @@ const DEMO_STORYBOARD: StoryboardData = {
     },
     {
       id: 15,
+      component: "TypewriterText",
+      props: {
+        title: "华为春节战报",
+        text: "华为春节狂飙 3.73亿公里！",
+        charsPerSecond: 7,
+        highlight: "3.73亿公里",
+      },
+      durationInSeconds: 10,
+      transition: "fade",
+    },
+    {
+      id: 16,
       component: "KeyPoint",
       props: {
         text: "未来已来，只是还未均匀分布",

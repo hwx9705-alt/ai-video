@@ -9,6 +9,7 @@ import { KeyPoint } from "./KeyPoint";
 import { TitleCard } from "./TitleCard";
 import { BulletList } from "./BulletList";
 import { ImageWithOverlay } from "./ImageWithOverlay";
+import { TypewriterText } from "./TypewriterText";
 
 export {
   DataReveal,
@@ -21,10 +22,11 @@ export {
   TitleCard,
   BulletList,
   ImageWithOverlay,
+  TypewriterText,
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const COMPONENT_MAP: Partial<Record<ComponentName, React.FC<any>>> = {
+export const COMPONENT_MAP: Record<ComponentName, React.FC<any>> = {
   DataReveal,
   BarChartAnimated,
   LineChartAnimated,
@@ -35,4 +37,5 @@ export const COMPONENT_MAP: Partial<Record<ComponentName, React.FC<any>>> = {
   TitleCard,
   BulletList,
   ImageWithOverlay,
+  TypewriterText,
 };

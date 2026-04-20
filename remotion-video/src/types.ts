@@ -109,3 +109,11 @@ export interface ImageWithOverlayProps {
   title: string;
   subtitle?: string;
 }
+
+export interface TypewriterTextProps {
+  text: string;
+  title?: string;
+  charsPerSecond?: number; // 默认 8
+  highlight?: string; // 可选高亮子串，打到该处变色
+  showCursor?: boolean; // 默认 true
+}
