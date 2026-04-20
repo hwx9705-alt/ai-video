@@ -1,13 +1,24 @@
 /**
  * DataReveal — 大数字冲击展示
- * 核心数字从 0 countUp 到目标值，副标题延迟淡入
+ * easeOut 数字滚动 + 达成冲击 + 千分位格式化。
+ * 字号通过 fitText 自适应容器宽。
  */
-import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
-import { theme } from "../design-system";
+import {
+  AbsoluteFill,
+  interpolate,
+  spring,
+  useCurrentFrame,
+  useVideoConfig,
+} from "remotion";
+import { fitText } from "@remotion/layout-utils";
+import { theme, glowShadow } from "../design-system";
+import { fontFamily } from "../fonts";
 import type { DataRevealProps } from "../types";
 
+const COUNT_FROM = 10;
+const COUNT_TO = 80;
+
 function parseNumber(str: string): number {
-  // 提取字符串中的数字部分（支持小数）
   const match = str.match(/[\d.]+/);
   return match ? parseFloat(match[0]) : 0;
 }
@@ -21,45 +32,67 @@ export const DataReveal: React.FC<DataRevealProps> = ({
   countUp = true,
 }) => {
   const frame = useCurrentFrame();
-  const { fps, durationInFrames } = useVideoConfig();
+  const { fps, width } = useVideoConfig();
 
   const targetNum = parseNumber(number);
-  // 从字符串里提取非数字部分作为内嵌后缀（如 "3.73亿" 中的 "亿"）
   const inlineSuffix = number.replace(/[\d.]/g, "").trim();
-
-  // 数字动画：前 60 帧 countUp
-  const countProgress = spring({
-    frame,
-    fps,
-    config: { damping: 20, stiffness: 60, mass: 1.2 },
-    durationInFrames: Math.min(60, durationInFrames - 20),
-  });
-
-  const displayNum = countUp
-    ? interpolate(countProgress, [0, 1], [0, targetNum])
-    : targetNum;
-
-  // 格式化数字：整数直接显示，小数保留原字符串的小数位数
   const decimalPlaces = (number.match(/\.(\d+)/) || [])[1]?.length ?? 0;
-  const formattedNum = decimalPlaces > 0
-    ? displayNum.toFixed(decimalPlaces)
-    : Math.round(displayNum).toString();
 
-  // 整体缩放弹入
+  const progress = countUp
+    ? interpolate(frame, [COUNT_FROM, COUNT_TO], [0, 1], {
+        extrapolateLeft: "clamp",
+        extrapolateRight: "clamp",
+        easing: theme.easings.easeOutCubic,
+      })
+    : 1;
+
+  const displayNum = targetNum * progress;
+  const rawFormatted =
+    decimalPlaces > 0 ? displayNum.toFixed(decimalPlaces) : Math.round(displayNum).toString();
+  const formattedNum =
+    decimalPlaces === 0 && targetNum >= 1000
+      ? Math.round(displayNum).toLocaleString("en-US")
+      : rawFormatted;
+
+  // 冲击反馈：countUp 完成时一次脉冲
+  const impactSpring = spring({
+    frame: frame - COUNT_TO,
+    fps,
+    config: theme.springs.impact,
+    durationInFrames: 20,
+  });
+  const pulse = 1 + Math.max(0, impactSpring) * 0.12;
+
+  // fitText：根据目标字符串测量（用 target，避免 countUp 过程中字号抖动）
+  const targetFormatted =
+    decimalPlaces === 0 && targetNum >= 1000
+      ? targetNum.toLocaleString("en-US")
+      : number.replace(/[^\d.]/g, ""); // target raw number part
+  const heroWidth = width - 2 * theme.spacing.pagePadding - 400; // 留 prefix/suffix 空间
+  const fitted = fitText({
+    text: targetFormatted || "0",
+    withinWidth: heroWidth,
+    fontFamily,
+    fontWeight: "900",
+  });
+  const mainFontSize = Math.min(fitted.fontSize, theme.fontSize.hero * 2);
+  const sideFontSize = Math.round(mainFontSize * 0.5);
+
+  // 整体入场
   const scaleAnim = spring({
     frame,
     fps,
-    config: { damping: 14, stiffness: 100, mass: 0.8 },
+    config: theme.springs.snappy,
     durationInFrames: 30,
   });
-  const scale = interpolate(scaleAnim, [0, 1], [0.6, 1]);
+  const scale = interpolate(scaleAnim, [0, 1], [0.6, 1]) * pulse;
   const opacity = interpolate(scaleAnim, [0, 1], [0, 1]);
 
-  // 副标题淡入（延迟 25 帧）
+  // 副标题（延迟 25 帧）
   const subtitleAnim = spring({
     frame: frame - 25,
     fps,
-    config: { damping: 16, stiffness: 80 },
+    config: theme.springs.gentle,
     durationInFrames: 30,
   });
   const subtitleOpacity = interpolate(subtitleAnim, [0, 1], [0, 1]);
@@ -69,7 +102,7 @@ export const DataReveal: React.FC<DataRevealProps> = ({
   const lineAnim = spring({
     frame: frame - 15,
     fps,
-    config: { damping: 20, stiffness: 70 },
+    config: theme.springs.gentle,
     durationInFrames: 25,
   });
 
@@ -84,53 +117,64 @@ export const DataReveal: React.FC<DataRevealProps> = ({
         fontFamily: theme.fonts.title,
       }}
     >
-      {/* 数字主体 */}
       <div
         style={{
           opacity,
           transform: `scale(${scale})`,
           display: "flex",
           alignItems: "baseline",
-          gap: 8,
+          gap: 12,
         }}
       >
         {prefix && (
-          <span style={{ fontSize: 56, fontWeight: 700, color: theme.colors.textSecondary }}>
+          <span
+            style={{
+              fontSize: sideFontSize,
+              fontWeight: 700,
+              color: theme.colors.textSecondary,
+            }}
+          >
             {prefix}
           </span>
         )}
         <span
           style={{
-            fontSize: theme.fontSize.hero,
+            fontSize: mainFontSize,
             fontWeight: 900,
             color: highlightColor,
             fontFamily: theme.fonts.data,
+            fontVariantNumeric: "tabular-nums",
             letterSpacing: -2,
             lineHeight: 1,
+            textShadow: glowShadow(highlightColor, 40),
           }}
         >
           {formattedNum}
         </span>
         {(inlineSuffix || suffix) && (
-          <span style={{ fontSize: 52, fontWeight: 700, color: highlightColor }}>
+          <span
+            style={{
+              fontSize: sideFontSize,
+              fontWeight: 700,
+              color: highlightColor,
+            }}
+          >
             {inlineSuffix || suffix}
           </span>
         )}
       </div>
 
-      {/* 装饰线 */}
       <div
         style={{
-          width: interpolate(lineAnim, [0, 1], [0, 200]),
+          width: interpolate(lineAnim, [0, 1], [0, 240]),
           height: 3,
           backgroundColor: highlightColor,
           borderRadius: 2,
-          margin: "28px 0",
+          margin: "32px 0",
           opacity: interpolate(lineAnim, [0, 1], [0, 0.6]),
         }}
       />
 
-      {/* 副标题 */}
       <div
         style={{
           opacity: subtitleOpacity,
@@ -138,7 +182,7 @@ export const DataReveal: React.FC<DataRevealProps> = ({
           fontSize: theme.fontSize.subtitle,
           color: theme.colors.textSecondary,
           textAlign: "center",
-          maxWidth: 900,
+          maxWidth: 1100,
           lineHeight: 1.5,
           padding: "0 80px",
         }}
