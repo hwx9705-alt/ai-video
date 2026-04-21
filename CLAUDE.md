@@ -47,9 +47,9 @@ remotion-video/render.py  →  npx remotion render  →  MP4
 
 ---
 
-## 当前进度（2026-04-20）
+## 当前进度（2026-04-21）
 
-### Remotion 组件库改造（remotion-change 分支）
+### Remotion 组件库改造（remotion-change 分支，merge SHA `8a4cbf7`）
 - 引入 `@remotion/layout-utils` 的 fitText/measureText 做精确自适应布局
 - 切换到 `@remotion/google-fonts/NotoSansSC`（latin 子集 + 系统 CJK fallback）
 - design-system 扩展：springs / easings / shadows / gradients 预设
@@ -60,13 +60,22 @@ remotion-video/render.py  →  npx remotion render  →  MP4
 - Transition 升级支持 fade / slide / cut 三种模式
 - generate_storyboard.py LLM prompt 同步更新教会 pipeline 选择新组件
 
-### Script Agent 小 Lin 风格深化（script-prompt-v2 分支）
+### Script Agent 小 Lin 风格深化（script-prompt-v2 分支，merge SHA `2e31654`）
 - 新建 `pipeline/knowledge_base/xiaolin/` 素材库（8 万字 docx 转 md + 18 份示例）
 - `pipeline/agents/_knowledge.py` 加载器（Path.glob，无 RAG）
 - `script.py` 的 OUTLINE/SCRIPT prompt 改占位符动态注入：结构 5/5、技巧 10/10、开头 3/3 全覆盖（原只有 1/5 + 2/10 + 0/3）
 - 强制稿末输出"本稿使用的技巧清单"并逐段标注
 - Kimi 自审正向化：技巧落地核对 + 多样性 ≥4 + 尾段质量守护
 - 用户后续追加小 Lin 原稿只需 drop 进 `/home/ubuntu/upload/小lin说文字稿/` 重跑 convert_docx 再 pm2 restart
+
+### 视频编码兼容性修复（main 直接 commit `2591856`）
+- v3/v4 因 png 中间格式导致 `pix_fmt=yuv420p + color_range=unknown`，部分浏览器拒播
+- `remotion-video/remotion.config.ts` 回到 `setVideoImageFormat("jpeg")` + `setCrf(18)`
+- 输出 `pix_fmt=yuvj420p`（完整色域），和能播的 v2 一致
+
+### 定稿产物
+- `remotion-video/out/demo-v5.mp4`（222s / 17.5 MB / yuvj420p / 跨浏览器可播）—— demo 改造最终版
+- 旧 demo（v2/v3/v4）可删
 
 ### 原有里程碑
 - 全流水线跑通（research → storyboard → Remotion render）
@@ -92,6 +101,7 @@ git push origin main
 ### 可回撤的改造锚点
 - **Remotion 组件库改造** — merge commit `8a4cbf7`（11 commits 合并入 main）
 - **Script Agent 小 Lin 风格深化** — merge commit `2e31654`（4 commits 合并入 main）
+- **视频编码兼容性修复** — 直接 commit `2591856`（单文件改动，用 `git revert 2591856` 回撤即可）
 
 分支本身也保留（`remotion-change`、`script-prompt-v2`），可作 checkout 参照。
 
@@ -110,11 +120,24 @@ git push origin main
 
 ---
 
-## 后续计划
+## 未来规划
 
-- Script Agent prompt 优化（内容深度不足）
-- 各 Agent 输入输出日志透明化
-- chart_data 结构化数据填充（目前 chart 段落靠 visual agent 手动填）
+### P1 — Tavily 实时搜索验证
+- **问题**：`pipeline/agents/research.py` 在 `TAVILY_API_KEY` 缺失或 Tavily 调用失败时，**静默 fallback 到 LLM 内部知识**（DeepSeek 训练数据截止 2024 年中）。用户看不到 fallback，脚本里可能混入编造的近期数据
+- **方案**：
+  - `research.py` 加显式日志："Tavily HIT: X 条结果" / "Tavily MISS: 已 fallback 到 LLM 内部知识" 让 fallback 对用户可见
+  - 可选：加开关 `REQUIRE_TAVILY=1` 时失败直接 abort，不允许 fallback
+  - 验证：手动断开 `TAVILY_API_KEY`，跑一次选题看日志是否醒目标出 fallback
+
+### P2 — 视频合成替换 ffmpeg composer 为 Remotion
+- **问题**：`pipeline/tools/composer.py` 用 ffmpeg 拼图+音频出成片；`remotion-video/render.py` 是动态渲染入口。**两套并存**，composer 的图片幻灯片风格已被 Remotion 取代
+- **方案**：orchestrator 成片阶段改调 `remotion-video/render.py`，彻底废弃 `composer.py`
+- **前置**：确认 Remotion render 已能处理完整成片流程（当前 gate_3 已能触发，但不确定 gate_4 合片是否也已接上）
+
+### P3 — Topic Agent 接入 openings 范例
+- **问题**：Topic Agent 选角度时**不考虑开头钩子可行性**，导致 Script 后面强凑开头。现状 `knowledge_base/xiaolin/examples/openings/` 只有 Script Agent 在用
+- **方案**：在 `pipeline/agents/topic.py` 的 prompt 里注入 `openings/` 三份 md（数据震撼 / 权力感排比 / 共情代入），Topic 选题时反向考虑角度是否匹配某类 hook
+- **边界**：**仅 Topic 接 openings**，Storyboard/Research/VideoScript 不接（创作类 vs 信息处理类的边界划清，避免稀释这些 agent 的本职任务）
 
 ---
 
