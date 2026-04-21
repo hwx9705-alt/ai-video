@@ -10,11 +10,20 @@ from __future__ import annotations
 
 import os
 import logging
+from typing import NamedTuple
 
 from agents import BaseAgent
 from state import ProjectState, Stage, StageStatus
 
 logger = logging.getLogger(__name__)
+
+
+class TavilyResult(NamedTuple):
+    """Tavily 搜索的结构化结果。text 只有 status='hit' 时非空。"""
+    status: str          # "hit" | "no_key" | "http_error" | "empty"
+    text: str
+    hit_count: int
+    reason: str
 
 
 SYSTEM_PROMPT = """\
@@ -58,12 +67,12 @@ SYSTEM_PROMPT = """\
 """
 
 
-def _tavily_search(query: str, max_results: int = 5) -> str:
-    """调用 Tavily 搜索，返回格式化的搜索结果字符串。失败时返回空字符串。"""
+def _tavily_search(query: str, max_results: int = 5) -> TavilyResult:
+    """调用 Tavily 搜索，返回结构化结果。不抛异常，失败状态由 status 区分。"""
     api_key = os.getenv("TAVILY_API_KEY", "")
     if not api_key:
         logger.warning("TAVILY_API_KEY 未配置，跳过实时搜索")
-        return ""
+        return TavilyResult("no_key", "", 0, "TAVILY_API_KEY 未配置")
 
     try:
         import requests
@@ -84,8 +93,13 @@ def _tavily_search(query: str, max_results: int = 5) -> str:
         resp.raise_for_status()
         data = resp.json()
     except Exception as e:
-        logger.warning(f"Tavily 搜索失败：{e}")
-        return ""
+        reason = str(e)[:200]
+        logger.warning(f"Tavily 搜索失败：{reason}")
+        return TavilyResult("http_error", "", 0, reason)
+
+    results = data.get("results", []) or []
+    if not results:
+        return TavilyResult("empty", "", 0, "Tavily 返回 0 条结果")
 
     lines = ["【实时搜索结果】"]
 
@@ -94,9 +108,8 @@ def _tavily_search(query: str, max_results: int = 5) -> str:
     if answer:
         lines.append(f"搜索摘要：{answer}\n")
 
-    for i, result in enumerate(data.get("results", []), 1):
+    for i, result in enumerate(results, 1):
         title = result.get("title", "")
-        url = result.get("url", "")
         content = result.get("content", "")
         published = result.get("published_date", "")
         date_str = f"（{published}）" if published else ""
@@ -107,7 +120,7 @@ def _tavily_search(query: str, max_results: int = 5) -> str:
             lines.append(f"   摘要：{snippet}")
         lines.append("")
 
-    return "\n".join(lines)
+    return TavilyResult("hit", "\n".join(lines), len(results), "")
 
 
 class ResearchAgent(BaseAgent):
@@ -117,30 +130,43 @@ class ResearchAgent(BaseAgent):
         topic = state["topic_direction"]
         self._log(f"开始知识提取：{topic}")
 
+        def _report(label: str, res: TavilyResult):
+            if res.status == "hit":
+                self._log(f"✅ Tavily HIT [{label}]: {res.hit_count} 条结果")
+            else:
+                self._log(f"⚠️ Tavily MISS [{label}]: {res.reason}（已 fallback 到 LLM 内部知识）")
+
         # 1. Tavily 双重搜索：主话题 + 当前热点背景
         self._log("正在调用 Tavily 实时搜索（主话题）…")
-        search_results = _tavily_search(topic)
+        main_res = _tavily_search(topic)
+        _report("主话题", main_res)
 
         # 补充搜索"当前热点"，帮助 LLM 挖掘跨话题关联
         import time as _time
         year = _time.strftime("%Y")
         context_query = f"{year}年 {topic} 相关热点事件 地缘政治 经济影响"
         self._log("正在调用 Tavily 实时搜索（热点背景）…")
-        context_results = _tavily_search(context_query, max_results=3)
+        ctx_res = _tavily_search(context_query, max_results=3)
+        _report("热点背景", ctx_res)
 
-        if search_results or context_results:
-            self._log("Tavily 搜索成功，结果已注入 prompt")
-        else:
-            self._log("Tavily 搜索跳过或失败，仅使用 LLM 内部知识")
+        # REQUIRE_TAVILY=1/true/yes：任一搜索未命中则 abort，禁止 fallback
+        require = os.getenv("REQUIRE_TAVILY", "").lower() in ("1", "true", "yes")
+        if require and (main_res.status != "hit" or ctx_res.status != "hit"):
+            raise RuntimeError(
+                f"REQUIRE_TAVILY=1 但 Tavily 搜索未命中："
+                f"主话题={main_res.status}（{main_res.reason}），"
+                f"热点={ctx_res.status}（{ctx_res.reason}）。"
+                f"阻止 fallback 到 LLM 内部知识。"
+            )
 
         # 2. 构建用户 prompt
         user_prompt = f"主题方向：{topic}\n\n"
 
-        if search_results:
-            user_prompt += search_results + "\n\n"
+        if main_res.text:
+            user_prompt += main_res.text + "\n\n"
 
-        if context_results:
-            user_prompt += "【相关热点背景（供挖掘跨话题关联）】\n" + context_results + "\n\n"
+        if ctx_res.text:
+            user_prompt += "【相关热点背景（供挖掘跨话题关联）】\n" + ctx_res.text + "\n\n"
 
         if state.get("raw_materials"):
             user_prompt += "用户提供的原始素材：\n"
