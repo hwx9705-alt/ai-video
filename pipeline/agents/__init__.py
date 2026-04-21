@@ -24,6 +24,16 @@ _session.trust_env = False
 from config import LLMConfig
 from state import ProjectState
 
+# 可选的日志转发回调：Streamlit 侧在启动流水线线程前调用 set_log_sink(bridge.post_log)，
+# 让 Agent 的 _log() 同时流进 UI 日志面板（不替代 print，只是复制一份）
+_log_sink = None
+
+def set_log_sink(sink):
+    """注册日志 sink。签名 callable(str) -> None。传 None 可清除。"""
+    global _log_sink
+    _log_sink = sink
+
+
 # DeepSeek 作为全局降级备用配置（内容过滤时自动切换）
 _DEEPSEEK_FALLBACK: "LLMConfig | None" = None
 
@@ -164,6 +174,12 @@ class BaseAgent(ABC):
         ...
 
     def _log(self, message: str):
-        """简单日志"""
+        """简单日志：print 到 stdout（pm2 捕获），并复制一份给 UI sink"""
         timestamp = time.strftime("%H:%M:%S")
-        print(f"[{timestamp}] [{self.name}] {message}")
+        line = f"[{timestamp}] [{self.name}] {message}"
+        print(line)
+        if _log_sink is not None:
+            try:
+                _log_sink(line)
+            except Exception:
+                pass
