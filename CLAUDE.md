@@ -49,6 +49,13 @@ remotion-video/render.py  →  npx remotion render  →  MP4
 
 ## 当前进度（2026-04-21）
 
+### Tavily 搜索验证与 fallback 可见化（tavily-visibility 分支，merge SHA `1ff47b5`）
+- `research.py` 的 `_tavily_search` 改返回结构化 `TavilyResult`（status/text/hit_count/reason），fallback 原因在日志里区分 `no_key` / `http_error` / `empty`
+- `ResearchAgent.run` 用 `✅ Tavily HIT` / `⚠️ Tavily MISS` 前缀打报告，用户在 UI 左侧日志面板一眼可见
+- 新增 `REQUIRE_TAVILY=1` 严格模式开关：任一搜索未命中直接 `RuntimeError`，阻止 LLM 用训练截止 2024 年中的内部知识续跑
+- `agents/__init__.py` 的 `BaseAgent._log` 加模块级 `_log_sink` / `set_log_sink()`，Agent 日志同时转发到 Streamlit UI（原本只落 pm2 stdout）
+- `app.py` 的 `run_pipeline_thread` 和 `resume_pipeline_thread` 开头注入 `set_log_sink(bridge.post_log)`
+
 ### Remotion 组件库改造（remotion-change 分支，merge SHA `8a4cbf7`）
 - 引入 `@remotion/layout-utils` 的 fitText/measureText 做精确自适应布局
 - 切换到 `@remotion/google-fonts/NotoSansSC`（latin 子集 + 系统 CJK fallback）
@@ -99,11 +106,12 @@ git push origin main
 ```
 
 ### 可回撤的改造锚点
+- **Tavily 搜索验证与 fallback 可见化** — merge commit `1ff47b5`（3 commits 合并入 main）
 - **Remotion 组件库改造** — merge commit `8a4cbf7`（11 commits 合并入 main）
 - **Script Agent 小 Lin 风格深化** — merge commit `2e31654`（4 commits 合并入 main）
 - **视频编码兼容性修复** — 直接 commit `2591856`（单文件改动，用 `git revert 2591856` 回撤即可）
 
-分支本身也保留（`remotion-change`、`script-prompt-v2`），可作 checkout 参照。
+分支本身也保留（`tavily-visibility`、`remotion-change`、`script-prompt-v2`），可作 checkout 参照。
 
 ### 回撤示例
 ```bash
@@ -121,13 +129,6 @@ git push origin main
 ---
 
 ## 未来规划
-
-### P1 — Tavily 实时搜索验证
-- **问题**：`pipeline/agents/research.py` 在 `TAVILY_API_KEY` 缺失或 Tavily 调用失败时，**静默 fallback 到 LLM 内部知识**（DeepSeek 训练数据截止 2024 年中）。用户看不到 fallback，脚本里可能混入编造的近期数据
-- **方案**：
-  - `research.py` 加显式日志："Tavily HIT: X 条结果" / "Tavily MISS: 已 fallback 到 LLM 内部知识" 让 fallback 对用户可见
-  - 可选：加开关 `REQUIRE_TAVILY=1` 时失败直接 abort，不允许 fallback
-  - 验证：手动断开 `TAVILY_API_KEY`，跑一次选题看日志是否醒目标出 fallback
 
 ### P2 — 视频合成替换 ffmpeg composer 为 Remotion
 - **问题**：`pipeline/tools/composer.py` 用 ffmpeg 拼图+音频出成片；`remotion-video/render.py` 是动态渲染入口。**两套并存**，composer 的图片幻灯片风格已被 Remotion 取代
