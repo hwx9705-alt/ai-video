@@ -192,6 +192,8 @@ def _list_resumable_projects(projects_root: str) -> list:
 
 def resume_pipeline_thread(project_info: dict, bridge: PipelineBridge):
     """从检查点恢复流水线，直接进入对应审核门等待"""
+    from agents import set_log_sink
+    set_log_sink(bridge.post_log)
     try:
         bridge.status = "running"
         project_id = project_info["project_id"]
@@ -305,6 +307,8 @@ def resume_pipeline_thread(project_info: dict, bridge: PipelineBridge):
 
 def run_pipeline_thread(topic: str, bridge: PipelineBridge):
     """在子线程中执行流水线，通过 bridge 与 UI 通信"""
+    from agents import set_log_sink
+    set_log_sink(bridge.post_log)
     try:
         bridge.status = "running"
         bridge.post_log(f"✨ 项目启动：{topic}")
