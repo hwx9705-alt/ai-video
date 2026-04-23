@@ -47,7 +47,15 @@ remotion-video/render.py  →  npx remotion render  →  MP4
 
 ---
 
-## 当前进度（2026-04-21）
+## 当前进度（2026-04-23）
+
+### orchestrator 成片改调 Remotion，废弃 composer.py（compose-to-remotion 分支，merge SHA `28867cb`）
+- 删除 `pipeline/tools/composer.py`（ffmpeg concat demuxer + AI 生图幻灯片的老方案，已被 Remotion 11 个动画组件取代）
+- `pipeline/orchestrator.py` 的 `node_compose` 重写为内联调 `remotion-video/render.py`：注入 `audio_processed_paths[0]`（退回 `audio_raw_paths[0]`）作为 `audioPath`，`subprocess` 调 render.py 输出到 `{project_dir}/final_video.mp4`
+- 同时写 `draft_video_path`（gate_4 UI 现用的 key）和 `final_video_path`（state.py 已定义但从未赋值）
+- Remotion 渲染失败抛 `RuntimeError` 带末尾 800 字 stderr
+- gate_3 preview（`_run_remotion_render`）保持独立，不共享成片产物（成片 node 要用批准后的 state 重新渲一次）
+- gate_4 UI 零改动
 
 ### Tavily 搜索验证与 fallback 可见化（tavily-visibility 分支，merge SHA `1ff47b5`）
 - `research.py` 的 `_tavily_search` 改返回结构化 `TavilyResult`（status/text/hit_count/reason），fallback 原因在日志里区分 `no_key` / `http_error` / `empty`
@@ -106,12 +114,13 @@ git push origin main
 ```
 
 ### 可回撤的改造锚点
+- **orchestrator 成片改调 Remotion** — merge commit `28867cb`（2 commits 合并入 main）
 - **Tavily 搜索验证与 fallback 可见化** — merge commit `1ff47b5`（3 commits 合并入 main）
 - **Remotion 组件库改造** — merge commit `8a4cbf7`（11 commits 合并入 main）
 - **Script Agent 小 Lin 风格深化** — merge commit `2e31654`（4 commits 合并入 main）
 - **视频编码兼容性修复** — 直接 commit `2591856`（单文件改动，用 `git revert 2591856` 回撤即可）
 
-分支本身也保留（`tavily-visibility`、`remotion-change`、`script-prompt-v2`），可作 checkout 参照。
+分支本身也保留（`compose-to-remotion`、`tavily-visibility`、`remotion-change`、`script-prompt-v2`），可作 checkout 参照。
 
 ### 回撤示例
 ```bash
@@ -129,11 +138,6 @@ git push origin main
 ---
 
 ## 未来规划
-
-### P2 — 视频合成替换 ffmpeg composer 为 Remotion
-- **问题**：`pipeline/tools/composer.py` 用 ffmpeg 拼图+音频出成片；`remotion-video/render.py` 是动态渲染入口。**两套并存**，composer 的图片幻灯片风格已被 Remotion 取代
-- **方案**：orchestrator 成片阶段改调 `remotion-video/render.py`，彻底废弃 `composer.py`
-- **前置**：确认 Remotion render 已能处理完整成片流程（当前 gate_3 已能触发，但不确定 gate_4 合片是否也已接上）
 
 ### P3 — Topic Agent 接入 openings 范例
 - **问题**：Topic Agent 选角度时**不考虑开头钩子可行性**，导致 Script 后面强凑开头。现状 `knowledge_base/xiaolin/examples/openings/` 只有 Script Agent 在用

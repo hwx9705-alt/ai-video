@@ -61,7 +61,6 @@ streamlit run app.py --server.port 8501 --server.headless true
     ├── image_generator.py   # AI 生图（SiliconFlow Kolors）
     ├── audio_processor.py   # ffmpeg 音频处理（标准化+BGM混音）
     ├── tts_generator.py     # AI 语音合成（SiliconFlow CosyVoice2）含 extract_narration()
-    ├── composer.py          # ffmpeg 视频合成（待被 Remotion 替代）
     ├── bgm_finder.py        # BGM 搜索
     └── convert_docx.py      # 小 Lin 原稿 docx → md 一次性工具
 ```
@@ -96,7 +95,7 @@ Script Agent 启动时从 `knowledge_base/xiaolin/examples/` 动态读取示例�
     ↓ [gate_3 审核]
 ⑥ Visual        程序化图表 + AI生图（SiliconFlow Kolors）
 ⑦ Audio         ffmpeg 音量标准化 + BGM混音（或 TTS 合成）
-⑧ Compose       ffmpeg → MP4（待改为 Remotion render）
+⑧ Compose       node_compose 调 remotion-video/render.py → final_video.mp4
 ```
 
 每阶段有审核门（通过/局部修改/重做）。
