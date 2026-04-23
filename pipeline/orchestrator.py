@@ -36,7 +36,6 @@ from agents.visual import VisualProducer
 
 # Tool imports
 from tools.audio_processor import AudioProcessor
-from tools.composer import VideoComposer
 
 
 # ============================================================
@@ -95,8 +94,64 @@ def node_audio(state: ProjectState) -> ProjectState:
 
 
 def node_compose(state: ProjectState) -> ProjectState:
-    composer = VideoComposer()
-    return composer.compose(state)
+    """调 remotion-video/render.py 渲染最终成片，输出 final_video.mp4"""
+    import json
+    import os
+    import subprocess
+    import sys
+    import tempfile
+    from pathlib import Path
+
+    project_dir = Path(state["project_dir"])
+    video_script_json = state.get("video_script_json", "")
+    if not video_script_json:
+        raise RuntimeError("node_compose: state['video_script_json'] 为空，无法渲染")
+
+    processed = state.get("audio_processed_paths") or []
+    raw = state.get("audio_raw_paths") or []
+    audio_path = processed[0] if processed else (raw[0] if raw else "")
+
+    script = json.loads(video_script_json)
+    if audio_path and Path(audio_path).exists():
+        script["audioPath"] = audio_path
+
+    with tempfile.NamedTemporaryFile(
+        suffix=".json", mode="w", encoding="utf-8", delete=False
+    ) as f:
+        json.dump(script, f, ensure_ascii=False)
+        tmp_path = f.name
+
+    output_path = str(project_dir / "final_video.mp4")
+    render_py = str(Path(__file__).parent.parent / "remotion-video" / "render.py")
+    env = {**os.environ, "BROWSER_EXECUTABLE_PATH": "/usr/bin/chromium-browser"}
+
+    print(f"[compose] 调 Remotion 渲染 → {output_path}")
+    result = subprocess.run(
+        [sys.executable, render_py,
+         "--script", tmp_path,
+         "--output", output_path,
+         "--concurrency", "2"],
+        capture_output=True, text=True, timeout=900, env=env,
+    )
+    try:
+        os.unlink(tmp_path)
+    except Exception:
+        pass
+
+    if result.returncode != 0:
+        raise RuntimeError(
+            f"Remotion 渲染失败 (exit={result.returncode}): "
+            f"{(result.stderr or result.stdout)[-800:]}"
+        )
+
+    state["draft_video_path"] = output_path   # gate_4 UI 读这个 key
+    state["final_video_path"] = output_path   # state.py 里已定义，补赋值
+
+    status = dict(state.get("stage_status", {}))
+    status[Stage.COMPOSE.value] = StageStatus.AWAITING_REVIEW.value
+    state["stage_status"] = status
+    state["current_review_gate"] = "gate_4"
+    return state
 
 
 # ============================================================
